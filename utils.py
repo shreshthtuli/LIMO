@@ -53,7 +53,13 @@ class PropDataModule(pl.LightningDataModule):
 
 class Dataset(Dataset):
     def __init__(self, file):
-        selfies = [sf.encoder(line.split()[0]) for line in open(file, 'r')]
+        with open(file, 'r') as f:
+            selfies = []
+            for line in f:
+                try:
+                    selfies.append(sf.encoder(line.split()[0]))
+                except:
+                    pass
         self.alphabet = set()
         for s in selfies:
             self.alphabet.update(sf.split_selfies(s))
