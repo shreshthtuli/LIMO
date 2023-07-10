@@ -13,6 +13,8 @@ from torch.utils.data import Dataset, DataLoader, TensorDataset, random_split
 from rdkit.Chem.Crippen import MolLogP
 from rdkit.Chem import MolFromSmiles, QED
 from sascorer import calculateScore
+import pandas as pd
+import random
 import time
 import math
 
@@ -74,6 +76,52 @@ class Dataset(Dataset):
     
     def __getitem__(self, i):
         return torch.tensor(self.encodings[i] + [self.symbol_to_idx['[nop]'] for i in range(self.max_len - len(self.encodings[i]))])
+
+class ToxDataset(Dataset):
+    def __init__(self, file, dm):
+        df = pd.read_csv(file)
+        smiles = list(df['smiles'])
+        labels = list(df['CT_TOX'])
+        fin_selfies = []
+        fin_labels = []
+        for idx, x in enumerate(smiles):
+            try:
+                fin_selfies.append(sf.encoder(x))
+                fin_labels.append(labels[idx])
+            except:
+                continue
+        classwise = [[], []]
+        for idx in range(len(fin_labels)):
+            classwise[fin_labels[idx]].append(fin_selfies[idx])
+        neg = sorted(classwise[0], key=len)
+        pos = sorted(classwise[1], key=len)
+        fin_labels = [0 for _ in neg] + [1 for _ in pos]
+        random.shuffle(fin_labels)
+        neg_idx = 0
+        pos_idx = 0
+        fin_selfies = []
+        for _ in fin_labels:
+            if(_ == 0):
+                fin_selfies.append(neg[neg_idx])
+                neg_idx += 1
+            else:
+                fin_selfies.append(pos[pos_idx])
+                pos_idx += 1
+        self.alphabet = set()
+        for s in fin_selfies:
+            self.alphabet.update(sf.split_selfies(s))
+        self.alphabet = ['[nop]'] + list(sorted(self.alphabet))
+        self.max_len = dm.dataset.max_len
+        self.symbol_to_idx = {s: i for i, s in enumerate(self.alphabet)}
+        self.idx_to_symbol = {i: s for i, s in enumerate(self.alphabet)}
+        self.encodings = [[self.symbol_to_idx[symbol] for symbol in sf.split_selfies(s)] for s in fin_selfies if len(list(sf.split_selfies(s))) <= self.max_len]
+        self.labels = fin_labels
+        
+    def __len__(self):
+        return len(self.encodings)
+    
+    def __getitem__(self, i):
+        return torch.tensor(self.encodings[i] + [self.symbol_to_idx['[nop]'] for i in range(self.max_len - len(self.encodings[i]))]), self.labels[i]
     
     
 def smiles_to_indices(smiles):
