@@ -83,9 +83,9 @@ class Transformer(pl.LightningModule):
         self.embedding_dim = embedding_dim
         self.embedding = nn.Embedding(vocab_len, embedding_dim, padding_idx=0)
         self.pos_encoder = PositionalEncoding(embedding_dim, 0.1, latent_dim)
-        encoder_layers = TransformerEncoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=1000, dropout=0.1)
+        encoder_layers = TransformerEncoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=512, dropout=0.1)
         self.transformer_encoder = TransformerEncoder(encoder_layers, 1)
-        decoder_layers = TransformerDecoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=1000, dropout=0.1)
+        decoder_layers = TransformerDecoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=512, dropout=0.1)
         self.transformer_decoder = TransformerDecoder(decoder_layers, 1)
         self.fcn = nn.Sequential(nn.Linear(max_len * embedding_dim, max_len * vocab_len))
         

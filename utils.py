@@ -30,10 +30,10 @@ class MolDataModule(pl.LightningDataModule):
         self.train_data, self.test_data = random_split(self.dataset, [int(round(len(self.dataset) * 0.8)), int(round(len(self.dataset) * 0.2))])
     
     def train_dataloader(self):
-        return DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=16, pin_memory=True)
+        return DataLoader(self.train_data, batch_size=self.batch_size, shuffle=True, drop_last=True, num_workers=10, pin_memory=True)
     
     def val_dataloader(self):
-        return DataLoader(self.test_data, batch_size=self.batch_size, drop_last=True, num_workers=16, pin_memory=True)
+        return DataLoader(self.test_data, batch_size=self.batch_size, drop_last=True, num_workers=10, pin_memory=True)
     
     
 class PropDataModule(pl.LightningDataModule):
@@ -183,7 +183,7 @@ def smiles_to_penalized_logp(smiles):
     return logps
 
 
-def one_hots_to_affinity(hots, autodock, protein_file, num_devices=torch.cuda.device_count()):
+def one_hots_to_affinity(hots, autodock, protein_file, num_devices=1):
     return smiles_to_affinity([one_hot_to_smiles(hot) for hot in hots], autodock, protein_file, num_devices=num_devices)
 
 
@@ -206,7 +206,7 @@ def smiles_to_affinity(smiles, autodock, protein_file, num_devices=torch.cuda.de
             device = 0
     while True:
         total = 0
-        for device in range(num_devices):
+        for device in range(1):
             total += len(os.listdir(f'ligands/{device}'))
         if total == len(smiles):
             break
