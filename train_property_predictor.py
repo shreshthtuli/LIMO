@@ -71,7 +71,7 @@ def get_data(file, pos, neg, dm):
 
 def get_vae_out(mols):
     with torch.no_grad():
-        x, _, _, _ = vae.forward(mols.to(device))
+        x = vae.forward(mols.to(device))[0]
     return torch.exp(x)
 
 props = {'logp': one_hots_to_logp, 
