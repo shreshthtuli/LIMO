@@ -82,7 +82,7 @@ class Transformer(pl.LightningModule):
         self.vocab_len = vocab_len
         self.embedding_dim = embedding_dim
         self.embedding = nn.Embedding(vocab_len, embedding_dim, padding_idx=0)
-        self.pos_encoder = PositionalEncoding(embedding_dim, 0.1, latent_dim)
+        self.pos_encoder = PositionalEncoding(embedding_dim, 0.1)
         encoder_layers = TransformerEncoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=1000, dropout=0.1)
         self.transformer_encoder = TransformerEncoder(encoder_layers, 1)
         decoder_layers = TransformerDecoderLayer(d_model=embedding_dim, nhead=8, dim_feedforward=1000, dropout=0.1)
@@ -170,7 +170,7 @@ class ToxPredictor(PropertyPredictor):
 ##### DL utils #####
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, d_model, dropout=0.1, max_len=5000):
+    def __init__(self, d_model, dropout=0.1, max_len=2000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(p=dropout)
 
@@ -179,9 +179,9 @@ class PositionalEncoding(nn.Module):
         div_term = torch.exp(torch.arange(0, d_model).float() * (-math.log(10000.0) / d_model))
         pe += torch.sin(position * div_term)
         pe += torch.cos(position * div_term)
-        pe = pe.unsqueeze(0).transpose(0, 1)
+        pe = pe.unsqueeze(0)
         self.register_buffer('pe', pe)
 
     def forward(self, x, pos=0):
-        x = x + self.pe[pos:pos+x.size(0), :]
+        x = x + self.pe[:, pos:pos+x.size(1), :]
         return self.dropout(x)
