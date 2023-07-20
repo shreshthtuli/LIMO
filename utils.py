@@ -17,11 +17,20 @@ import pandas as pd
 import random
 import time
 import math
+from source.getsmilesvec import *
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 delta_g_to_kd = lambda x: math.exp(x / (0.00198720425864083 * 298.15))
+
+smipath ='./smivectors.pkl'
+if os.path.isfile(smipath):
+    with open(smipath, 'rb') as f:
+            prots = pickle.load(f, encoding='bytes')
+else:
+    smivec = returnSMIVector('./combined.smi')
+    pickle.dump(smivec, open(smipath,'wb')) 
 
 
 class MolDataModule(pl.LightningDataModule):
