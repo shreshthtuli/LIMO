@@ -5,3 +5,7 @@ outs/
 tran.pt
 .lr_find_*
 vae-baseline.pt
+source/utils/drug.pubchem.canon.l8.ws20.txt
+source/utils/drug.pubchem.canon.l1.ws20.txt
+smivectors.pkl
+dmSMI.pkl

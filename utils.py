@@ -25,13 +25,9 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 delta_g_to_kd = lambda x: math.exp(x / (0.00198720425864083 * 298.15))
 
 smipath ='./smivectors.pkl'
-if os.path.isfile(smipath):
-    with open(smipath, 'rb') as f:
-            prots = pickle.load(f, encoding='bytes')
-else:
+if not os.path.isfile(smipath):
     smivec = returnSMIVector('./combined.smi')
     pickle.dump(smivec, open(smipath,'wb')) 
-
 
 class MolDataModule(pl.LightningDataModule):
     def __init__(self, batch_size, file):
@@ -45,8 +41,14 @@ class MolDataModule(pl.LightningDataModule):
     
     def val_dataloader(self):
         return DataLoader(self.test_data, batch_size=self.batch_size, drop_last=True, num_workers=10, pin_memory=True)
-    
-    
+
+class MolDataModuleSMI(MolDataModule):
+    def __init__(self, batch_size, file):
+        super(MolDataModule, self).__init__()
+        self.batch_size = batch_size
+        self.dataset = DatasetSMI(file)
+        self.train_data, self.test_data = random_split(self.dataset, [int(round(len(self.dataset) * 0.8)), int(round(len(self.dataset) * 0.2))])
+
 class PropDataModule(pl.LightningDataModule):
     def __init__(self, x, y, batch_size):
         super(PropDataModule, self).__init__()
@@ -60,13 +62,12 @@ class PropDataModule(pl.LightningDataModule):
     def val_dataloader(self):
         return DataLoader(self.test_data, batch_size=self.batch_size, drop_last=True)
         
-
-
 class Dataset(Dataset):
     def __init__(self, file):
         with open(file, 'r') as f:
-            selfies = []
+            selfies = []; i = 0
             for line in f:
+                i += 1
                 try:
                     selfies.append(sf.encoder(line.split()[0]))
                 except:
@@ -85,6 +86,36 @@ class Dataset(Dataset):
     
     def __getitem__(self, i):
         return torch.tensor(self.encodings[i] + [self.symbol_to_idx['[nop]'] for i in range(self.max_len - len(self.encodings[i]))])
+
+class DatasetSMI(Dataset):
+    def __init__(self, file):
+        with open(smipath, 'rb') as f:
+                smivec = pickle.load(f)
+        smivecs = []
+        with open(file, 'r') as f:
+            selfies = []; i = 0
+            for line in f:
+                i += 1
+                try:
+                    selfies.append(sf.encoder(line.split()[0]))
+                    smivecs.append(smivec[i-1])
+                except:
+                    pass
+        self.alphabet = set()
+        for s in selfies:
+            self.alphabet.update(sf.split_selfies(s))
+        self.alphabet = ['[nop]'] + list(sorted(self.alphabet))
+        self.max_len = max(len(list(sf.split_selfies(s))) for s in selfies)
+        self.symbol_to_idx = {s: i for i, s in enumerate(self.alphabet)}
+        self.idx_to_symbol = {i: s for i, s in enumerate(self.alphabet)}
+        self.encodings = [[self.symbol_to_idx[symbol] for symbol in sf.split_selfies(s)] for s in selfies]
+        self.smivecs = smivecs
+        
+    def __len__(self):
+        return len(self.encodings)
+    
+    def __getitem__(self, i):
+        return torch.tensor(self.encodings[i] + [self.symbol_to_idx['[nop]'] for i in range(self.max_len - len(self.encodings[i]))]), torch.tensor(self.smivecs[i])
 
 class ToxDataset(Dataset):
     def __init__(self, file, dm):
@@ -299,3 +330,6 @@ def one_hot_to_smiles(hot):
 
 if os.path.exists('dm.pkl'):
     dm = pickle.load(open('dm.pkl', 'rb'))
+
+if os.path.exists('dmSMI.pkl'):
+    dmSMI = pickle.load(open('dmSMI.pkl', 'rb'))

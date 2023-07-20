@@ -36,7 +36,7 @@ def getSMIVector(LINGOembds, smiles, q=8, wordOrChar="wd"):
     return smilesVec
 
 
-def returnSMIVector(emb_file, smiles_path = "combined.smi"):
+def returnSMIVector(smiles_path, emb_file = './source/utils/drug.pubchem.canon.l8.ws20.txt'):
     EMB, vsize = loadEmbeddings(emb_file)
 
     smiless = [line.strip() for line in open(smiles_path)]

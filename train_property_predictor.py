@@ -11,7 +11,7 @@ device = "cpu" #torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # torch.cuda.set_device(1)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', choices=['vae', 'tran', 'vae-baseline'], default='vae')
+parser.add_argument('--model', choices=['vae', 'tran', 'vae-baseline', 'vae-smi'], default='vae')
 parser.add_argument('--prop', choices=['logp', 'penalized_logp', 'qed', 'sa', 'binding_affinity', 'toxicity'], default='binding_affinity')
 parser.add_argument('--num_mols', type=int, default=10000)
 parser.add_argument('--autodock_executable', type=str, default='./autodock_gpu_64wi')
@@ -23,6 +23,8 @@ try:
         vae = VAE(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
     elif args.model == 'vae-baseline':
         vae = VAE(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
+    elif args.model == 'vae-smi':
+        vae = VAE(max_len=dm.dataset.max_len + 100, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
     else:
         vae = Transformer(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), 
           latent_dim=1024, embedding_dim=64).to(device)
