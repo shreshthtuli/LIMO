@@ -9,3 +9,4 @@ source/utils/drug.pubchem.canon.l8.ws20.txt
 source/utils/drug.pubchem.canon.l1.ws20.txt
 smivectors.pkl
 dmSMI.pkl
+vae-smi.pt

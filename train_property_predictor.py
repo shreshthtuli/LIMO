@@ -24,7 +24,7 @@ try:
     elif args.model == 'vae-baseline':
         vae = VAE(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
     elif args.model == 'vae-smi':
-        vae = VAE(max_len=dm.dataset.max_len + 100, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
+        vae = VAESMI(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
     else:
         vae = Transformer(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), 
           latent_dim=1024, embedding_dim=64).to(device)
@@ -74,8 +74,10 @@ def get_data(file, pos, neg, dm):
     return x, y, test_x, test_y
 
 def get_vae_out(mols):
+    with open(smipath, 'rb') as f:
+            smivec = pickle.load(f)
     with torch.no_grad():
-        x = vae.forward(mols.to(device))[0]
+        x = vae.forward((mols.to(device), torch.tensor(smivec[:len(mols)])))[0] if 'toxicity' in args.prop else vae.forward(mols.to(device))[0]
     return torch.exp(x)
 
 props = {'logp': one_hots_to_logp, 
