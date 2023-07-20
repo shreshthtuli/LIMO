@@ -4,3 +4,4 @@ logs/
 outs/
 tran.pt
 .lr_find_*
+vae-baseline.pt

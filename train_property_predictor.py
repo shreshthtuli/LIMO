@@ -11,7 +11,7 @@ device = "cpu" #torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # torch.cuda.set_device(1)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', choices=['vae', 'tran'], default='vae')
+parser.add_argument('--model', choices=['vae', 'tran', 'vae-baseline'], default='vae')
 parser.add_argument('--prop', choices=['logp', 'penalized_logp', 'qed', 'sa', 'binding_affinity', 'toxicity'], default='binding_affinity')
 parser.add_argument('--num_mols', type=int, default=10000)
 parser.add_argument('--autodock_executable', type=str, default='./autodock_gpu_64wi')
@@ -20,6 +20,8 @@ args = parser.parse_args()
 
 try:
     if args.model == 'vae':
+        vae = VAE(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
+    elif args.model == 'vae-baseline':
         vae = VAE(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), latent_dim=1024, embedding_dim=64).to(device)
     else:
         vae = Transformer(max_len=dm.dataset.max_len, vocab_len=len(dm.dataset.symbol_to_idx), 
@@ -31,7 +33,7 @@ vae.eval()
 
 def generate_training_mols(num_mols, prop_func):
     with torch.no_grad():
-        z = torch.randn((num_mols, 1024), device=device) if args.model == 'vae' else torch.randn((num_mols, vae.max_len, vae.embedding_dim), device=device, requires_grad=True)
+        z = torch.randn((num_mols, 1024), device=device) if 'vae' in args.model else torch.randn((num_mols, vae.max_len, vae.embedding_dim), device=device, requires_grad=True)
         x = torch.exp(vae.decode(z))
         y = torch.tensor(prop_func(x), device=device).unsqueeze(1).float()
     return x[1000:], y[1000:], x[:1000], y[:1000]
